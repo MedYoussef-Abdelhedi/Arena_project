@@ -44,11 +44,12 @@ if __name__ == "__main__":
     # Read yaml configs
     root_save_dir: str = yaml_config["root_save_dir"]
     running_modes: Dict[str, bool] = yaml_config["running_modes"]
-    dataset2split: Dict[str, str] = yaml_config["datasets"]
+    dataset2split: Dict[str, List[str]] = yaml_config["datasets"]
 
     # Check dataset split setting.
-    for dataset, split in dataset2split.items():
-        check_dataset_split(dataset, split)
+    for dataset, splits in dataset2split.items():
+        for split in splits:
+            check_dataset_split(dataset, split)
 
     # Create directories for processed data saving.
     create_dirs(root_save_dir, list(dataset2split.keys()))
@@ -56,10 +57,11 @@ if __name__ == "__main__":
     # Build up QA data.
     if running_modes["build_split"]:
         cut_off: Optional[int] = yaml_config["cut_off"]
-        for dataset, split in dataset2split.items():
-            dataset_dir: str = get_dataset_dir(root_save_dir, dataset)
-            split_path: str = get_split_filepath(root_save_dir, dataset, split, sample_num=None)
-            reformat_dataset(dataset, split, split_path, dataset_dir, cut_off)
+        for dataset, splits in dataset2split.items():
+            for split in splits:
+                dataset_dir: str = get_dataset_dir(root_save_dir, dataset)
+                split_path: str = get_split_filepath(root_save_dir, dataset, split, sample_num=None)
+                reformat_dataset(dataset, split, split_path, dataset_dir, cut_off)
 
     # # Sample and download valid samples and docs for each dataset.
     # if running_modes["sample_sets"]:

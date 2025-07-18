@@ -21,11 +21,8 @@ cut_off: null
 datasets:
   # nq: validation
   # triviaqa: validation
-  hotpotqa: dev
-  two_wiki: dev
+  hotpotqa: [dev, train]
+  two_wiki: [dev, train]
   # popqa: test
   # webqa: test
-  musique: dev
-  hotpotqa: train
-  two_wiki: train
-  musique: train
+  musique: [dev, train]
