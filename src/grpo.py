@@ -3,6 +3,11 @@ import os
 import sys
 from dataclasses import dataclass, field
 
+sys.path.insert(0, "c:/Users/MSI/Desktop/ARENA/open-r1/src")
+sys.path.insert(0, "c:/Users/MSI/Desktop/ARENA/trl")
+# ---- ajouter avec les autres imports ----
+from transformers import EarlyStoppingCallback, TrainerCallback
+from transformers.trainer import TrainerControl  # utilitaire (optionnel)
 import datasets
 import torch
 import transformers
@@ -76,6 +81,30 @@ class GRPOScriptArguments(ScriptArguments):
         default=-1.0,
         metadata={"help": "Maximum (negative) penalty for for repetition penalty reward"},
     )
+# early stopping callback
+# Callback pour stopper si une métrique atteint un seuil absolu
+class ThresholdStopCallback(TrainerCallback):
+    
+    def __init__(self, metric_name: str, threshold: float, greater_is_better: bool = False):
+        self.metric_name = metric_name
+        self.threshold = threshold
+        self.greater_is_better = greater_is_better
+
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+        if metrics is None:
+            return control
+        val = metrics.get(self.metric_name)
+        if val is None:
+            return control
+        if self.greater_is_better:
+            reached = val >= self.threshold
+        else:
+            reached = val <= self.threshold
+        if reached:
+            logger.info(f"[ThresholdStopCallback] Metric {self.metric_name} reached threshold: {val} -> stop training.")
+            control.should_training_stop = True
+            control.should_save = True
+        return control
 
 def main(script_args, training_args, model_args):
     # Set seed for reproducibility
@@ -148,6 +177,24 @@ def main(script_args, training_args, model_args):
         use_cache=False if training_args.gradient_checkpointing else True,
     )
     training_args.model_init_kwargs = model_kwargs
+###########################################
+# les paramètres du callback de early stopping
+    # ---- callbacks: récupérer celles par défaut et ajouter early stopping / threshold ----
+    callbacks = get_callbacks(training_args, model_args)
+    if callbacks is None:
+        callbacks = []
+
+    # EarlyStoppingCallback (patience en nombre d'évals consécutives sans amélioration)
+    # Ajuste early_stopping_patience à ta convenance (ex: 3)
+    # Désactivé temporairement pour éviter les conflits avec eval_strategy
+    # callbacks.append(EarlyStoppingCallback(early_stopping_patience=3))
+
+    # Threshold stop: exemple d'arrêt si la loss descend sous 0.15
+    # - metric_name doit être identique à celui renvoyé par trainer.evaluate() (e.g. "eval_loss" ou "eval_f1")
+    # - si tu monitors une métrique à maximiser (F1), met greater_is_better=True
+    threshold_metric_name = "eval_loss"
+    threshold_value = 0.15   # adapte selon ton besoin
+    callbacks.append(ThresholdStopCallback(metric_name=threshold_metric_name, threshold=threshold_value, greater_is_better=False))
 
     #############################
     # Initialize the GRPO trainer
@@ -159,8 +206,9 @@ def main(script_args, training_args, model_args):
         train_dataset=dataset['train'],
         eval_dataset=dataset['test'],
         peft_config=get_peft_config(model_args),
-        callbacks=get_callbacks(training_args, model_args),
+        callbacks=callbacks,
         processing_class=tokenizer,
+        
     )
 
     ###############

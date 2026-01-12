@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     # Load and merge data from specified dataset names
     for name in dataset_names:
-        data_path = f'../data/data_direct/{name}/{trainfile_name}.jsonl'
+        data_path = f'C:/Users/MSI/Desktop/ARENA/data/data_direct/{name}/{trainfile_name}.jsonl'
         print(f'Loading data from: {data_path}')
         with open(data_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         dialog = {
             "prompt": [{"role": "user", "content": item['prompt']}],
             "answers": item['answers'],
-            "supporting_ids": item['supporting_ids'],
+            "supporting_ids": item.get('supporting_ids', []),
             "name": item['name'],
             "id": i,
         }
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     print(f'Number of dialogs: {len(dialogs)}')
 
     # Ensure output directory exists
-    output_dir = '../data/data_train/grpo'
+    output_dir = 'C:/Users/MSI/Desktop/ARENA/data/data_train/grpo'
     os.makedirs(output_dir, exist_ok=True)
 
     # Save the formatted dialog data

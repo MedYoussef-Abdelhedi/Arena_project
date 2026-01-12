@@ -22,25 +22,36 @@ def get_score(response):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--name', type=str, default='hotpotqa')
+    parser.add_argument('--name', type=str, default='grpo_eval')
+    parser.add_argument('--input-file', type=str, default='results/grpo_eval_preds.json', help='Path to input predictions file')
     parser.add_argument('--result-name', type=str, default='test')
     parser.add_argument('--limit', type=int, default=10000000)
     args = parser.parse_args()
 
-
     name = args.name
     result_name = args.result_name
     limit = args.limit
+    in_file = args.input_file
 
-    in_file = f'../results/vllm_inference_results/{name}/{result_name}.jsonl'
-    output_dir = f'../results/eval_gpt/{name}'
+    # Create output directory
+    output_dir = f'results/eval_gpt/{name}'
     os.makedirs(output_dir, exist_ok=True)
     out_file = os.path.join(output_dir, f'{result_name}.json')
 
+    # Load data
     data = []
-    with open(in_file, 'r') as f:
-        for line in f:
-            data.append(json.loads(line))
+    if in_file.endswith('.json'):
+        with open(in_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    elif in_file.endswith('.jsonl'):
+        with open(in_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data.append(json.loads(line))
+    else:
+        print(f"Unsupported file format: {in_file}")
+        exit(1)
 
     data = data[:limit]
 
