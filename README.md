@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ARENA
 
 ## Overview
@@ -316,3 +317,6 @@ If you find our work helpful, please consider citing our paper:
 ## License
 
 This project is licensed under the [MIT License](https://github.com/ren258/ARENA/blob/main/LICENSE).
+=======
+# Arena_project
+>>>>>>> aabe7d918e1e7dbac0618ce0bb5affc2c840ab2e
